@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>HTML体験ツール - 高校情報Ⅰ教材</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Meirio, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1::before {
+            content: "📝";
+            font-size: 28px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+        }
+
+        .btn-info {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+        }
+
+        /* スマホ用ビュー切り替え */
+        .view-toggle {
+            display: none;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .view-toggle button {
+            flex: 1;
+            padding: 12px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+        }
+
+        .view-toggle button.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 70px);
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .panel {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-header::before {
+            font-size: 20px;
+        }
+
+        .editor-header::before {
+            content: "✏️";
+        }
+
+        .preview-header::before {
+            content: "🖥️";
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #667eea;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .editor-container {
+            display: none;
+            height: 100%;
+            width: 100%;
+        }
+
+        .editor-container.active {
+            display: grid;
+            grid-template-columns: auto 1fr;
+        }
+
+        .line-numbers {
+            padding: 20px 12px;
+            background: #e9ecef;
+            color: #6c757d;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: right;
+            user-select: none;
+            border-right: 2px solid #dee2e6;
+            overflow: hidden;
+            white-space: pre;
+        }
+
+        .editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            background: #f8f9fa;
+            color: #2d3748;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        #preview {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        .examples {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            max-width: 300px;
+            z-index: 10;
+        }
+
+        .examples h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .examples ul {
+            list-style: none;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .examples li::before {
+            content: "💡 ";
+            margin-right: 5px;
+        }
+
+        /* エクスポートメニュー */
+        .export-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .export-overlay.show {
+            display: block;
+        }
+
+        .export-menu {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 1000;
+            min-width: 350px;
+        }
+
+        .export-menu.show {
+            display: block;
+        }
+
+        .export-menu h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .export-option {
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .export-option:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+            transform: translateY(-2px);
+        }
+
+        .export-option-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .export-option-desc {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .export-close {
+            margin-top: 20px;
+            width: 100%;
+            padding: 10px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .export-close:hover {
+            background: #dee2e6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .examples {
+                display: none;
+            }
+
+            .header {
+                padding: 10px 15px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .header h1::before {
+                font-size: 20px;
+            }
+
+            .controls {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .btn {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+
+            .panel {
+                min-height: 300px;
+            }
+
+            .panel-header {
+                font-size: 14px;
+                padding: 10px 15px;
+            }
+
+            .tab {
+                font-size: 12px;
+                padding: 10px 15px;
+            }
+
+            .editor {
+                font-size: 12px;
+                padding: 15px;
+            }
+
+            .line-numbers {
+                font-size: 12px;
+                padding: 15px 8px;
+            }
+
+            .export-menu {
+                min-width: 280px;
+                padding: 20px;
+            }
+
+            .export-menu h2 {
+                font-size: 18px;
+            }
+        }
+
+        /* スマートフォン用 (480px以下) */
+        @media (max-width: 480px) {
+            .view-toggle {
+                display: flex;
+            }
+
+            .container {
+                height: auto;
+                min-height: calc(100vh - 140px);
+                padding: 10px;
+            }
+
+            .panel {
+                display: none;
+                min-height: 400px;
+            }
+
+            .panel.active-view {
+                display: flex;
+            }
+
+            .header h1 {
+                font-size: 16px;
+                width: 100%;
+                margin-bottom: 8px;
+            }
+
+            .controls {
+                width: 100%;
+            }
+
+            .btn {
+                flex: 1;
+                font-size: 11px;
+                padding: 8px 6px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>HTML体験ツール</h1>
+        <div class="controls">
+            <button class="btn btn-secondary" onclick="loadExample()">
+                📚 サンプル読込
+            </button>
+            <button class="btn btn-info" onclick="showExportMenu()">
+                💾 エクスポート
+            </button>
+            <button class="btn btn-primary" onclick="clearEditor()">
+                🗑️ クリア
+            </button>
+        </div>
+    </div>
+
+    <!-- スマホ用ビュー切り替え -->
+    <div class="view-toggle">
+        <button class="active" onclick="switchView('editor')">✏️ エディタ</button>
+        <button onclick="switchView('preview')">🖥️ プレビュー</button>
+    </div>
+
+    <div class="container">
+        <div class="panel active-view" id="editor-panel">
+            <div class="panel-header editor-header">コード編集</div>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('html')">HTML</button>
+                <button class="tab" onclick="switchTab('css')">CSS</button>
+            </div>
+            <div class="panel-content">
+                <div class="editor-container active" id="html-container">
+                    <div class="line-numbers" id="html-line-numbers">1</div>
+                    <textarea class="editor" id="html-editor" placeholder="ここにHTMLコードを入力してください...&#10;&#10;例:&#10;<h1>こんにちは!</h1>&#10;<p>これは段落です。</p>"></textarea>
+                </div>
+                <div class="editor-container" id="css-container">
+                    <div class="line-numbers" id="css-line-numbers">1</div>
+                    <textarea class="editor" id="css-editor" placeholder="ここにCSSコードを入力してください...&#10;&#10;例:&#10;body {&#10;  background-color: #f0f0f0;&#10;}&#10;&#10;h1 {&#10;  color: #667eea;&#10;}"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" id="preview-panel">
+            <div class="panel-header preview-header">プレビュー</div>
+            <div class="panel-content">
+                <iframe id="preview"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div class="examples">
+        <h3>🎯 学習のヒント</h3>
+        <ul>
+            <li>&lt;h1&gt; ~ &lt;h6&gt; で見出し</li>
+            <li>&lt;p&gt; で段落</li>
+            <li>&lt;a href="..."&gt; でリンク</li>
+            <li>&lt;img src="..."&gt; で画像</li>
+            <li>&lt;ul&gt;&lt;li&gt; でリスト</li>
+            <li>&lt;table&gt; で表</li>
+        </ul>
+    </div>
+
+    <!-- エクスポートメニュー -->
+    <div class="export-overlay" id="export-overlay" onclick="hideExportMenu()"></div>
+    <div class="export-menu" id="export-menu">
+        <h2>💾 エクスポート形式を選択</h2>
+        <div class="export-option" onclick="exportSeparateFiles()">
+            <div class="export-option-title">📁 個別ファイル</div>
+            <div class="export-option-desc">HTMLとCSSを別々のファイルで保存</div>
+        </div>
+        <div class="export-option" onclick="exportSingleFile()">
+            <div class="export-option-title">📄 統合ファイル</div>
+            <div class="export-option-desc">すべてを1つのHTMLファイルにまとめて保存</div>
+        </div>
+        <button class="export-close" onclick="hideExportMenu()">キャンセル</button>
+    </div>
+
+    <script>
+        const htmlEditor = document.getElementById('html-editor');
+        const cssEditor = document.getElementById('css-editor');
+        const preview = document.getElementById('preview');
+        const htmlLineNumbers = document.getElementById('html-line-numbers');
+        const cssLineNumbers = document.getElementById('css-line-numbers');
+        
+        // ローカルストレージのキー
+        const STORAGE_KEY_HTML = 'html_learning_tool_html';
+        const STORAGE_KEY_CSS = 'html_learning_tool_css';
+        const STORAGE_KEY_TIMESTAMP = 'html_learning_tool_timestamp';
+
+        // スマホ用ビュー切り替え
+        function switchView(view) {
+            const editorPanel = document.getElementById('editor-panel');
+            const previewPanel = document.getElementById('preview-panel');
+            const toggleButtons = document.querySelectorAll('.view-toggle button');
+
+            toggleButtons.forEach(btn => btn.classList.remove('active'));
+
+            if (view === 'editor') {
+                editorPanel.classList.add('active-view');
+                previewPanel.classList.remove('active-view');
+                toggleButtons[0].classList.add('active');
+            } else {
+                editorPanel.classList.remove('active-view');
+                previewPanel.classList.add('active-view');
+                toggleButtons[1].classList.add('active');
+            }
+        }
+
+        // タブ切り替え
+        function switchTab(tabName) {
+            // タブボタンの切り替え
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // エディタコンテナの切り替え
+            document.querySelectorAll('.editor-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            document.getElementById(tabName + '-container').classList.add('active');
+        }
+
+        // 行番号更新
+        function updateLineNumbers(editor, lineNumbersDiv) {
+            const lines = editor.value.split('\n').length;
+            let lineNumbersText = '';
+            for (let i = 1; i <= lines; i++) {
+                lineNumbersText += i + '\n';
+            }
+            lineNumbersDiv.textContent = lineNumbersText;
+        }
+
+        // エディタのスクロール同期
+        function syncScroll(editor, lineNumbersDiv) {
+            lineNumbersDiv.scrollTop = editor.scrollTop;
+        }
+
+        // リアルタイムプレビュー更新
+        function updatePreview() {
+            const htmlContent = htmlEditor.value;
+            const cssContent = cssEditor.value;
+            
+            // CSSを<style>タグで囲む
+            let finalHTML = htmlContent;
+            
+            // HTMLに<style>タグを挿入
+            if (cssContent.trim()) {
+                const styleTag = `<style>${cssContent}</style>`;
+                
+                // <head>タグがある場合は、その中に挿入
+                if (finalHTML.includes('</head>')) {
+                    finalHTML = finalHTML.replace('</head>', styleTag + '</head>');
+                } 
+                // <body>タグがある場合は、その前に挿入
+                else if (finalHTML.includes('<body>')) {
+                    finalHTML = finalHTML.replace('<body>', styleTag + '<body>');
+                }
+                // どちらもない場合は、先頭に挿入
+                else {
+                    finalHTML = styleTag + finalHTML;
+                }
+            }
+            
+            const previewDocument = preview.contentDocument || preview.contentWindow.document;
+            previewDocument.open();
+            previewDocument.write(finalHTML);
+            previewDocument.close();
+        }
+
+        // ローカルストレージに保存
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY_HTML, htmlEditor.value);
+                localStorage.setItem(STORAGE_KEY_CSS, cssEditor.value);
+                localStorage.setItem(STORAGE_KEY_TIMESTAMP, new Date().toISOString());
+            } catch (e) {
+                console.error('ローカルストレージへの保存に失敗しました:', e);
+            }
+        }
+        
+        // ローカルストレージから読み込み
+        function loadFromLocalStorage() {
+            try {
+                const savedHTML = localStorage.getItem(STORAGE_KEY_HTML);
+                const savedCSS = localStorage.getItem(STORAGE_KEY_CSS);
+                const timestamp = localStorage.getItem(STORAGE_KEY_TIMESTAMP);
+                
+                if (savedHTML !== null || savedCSS !== null) {
+                    if (savedHTML) {
+                        htmlEditor.value = savedHTML;
+                        updateLineNumbers(htmlEditor, htmlLineNumbers);
+                    }
+                    if (savedCSS) {
+                        cssEditor.value = savedCSS;
+                        updateLineNumbers(cssEditor, cssLineNumbers);
+                    }
+                    updatePreview();
+                    
+                    // 保存日時を表示
+                    if (timestamp) {
+                        const date = new Date(timestamp);
+                        const dateStr = date.toLocaleString('ja-JP');
+                        console.log('前回の編集内容を復元しました (保存日時: ' + dateStr + ')');
+                    }
+                    return true;
+                }
+            } catch (e) {
+                console.error('ローカルストレージからの読み込みに失敗しました:', e);
+            }
+            return false;
+        }
+        
+        // ローカルストレージをクリア
+        function clearLocalStorage() {
+            try {
+                localStorage.removeItem(STORAGE_KEY_HTML);
+                localStorage.removeItem(STORAGE_KEY_CSS);
+                localStorage.removeItem(STORAGE_KEY_TIMESTAMP);
+            } catch (e) {
+                console.error('ローカルストレージのクリアに失敗しました:', e);
+            }
+        }
+
+        // HTMLエディタのイベント
+        htmlEditor.addEventListener('input', () => {
+            updateLineNumbers(htmlEditor, htmlLineNumbers);
+            updatePreview();
+            saveToLocalStorage();
+        });
+        htmlEditor.addEventListener('scroll', () => {
+            syncScroll(htmlEditor, htmlLineNumbers);
+        });
+
+        // CSSエディタのイベント
+        cssEditor.addEventListener('input', () => {
+            updateLineNumbers(cssEditor, cssLineNumbers);
+            updatePreview();
+            saveToLocalStorage();
+        });
+        cssEditor.addEventListener('scroll', () => {
+            syncScroll(cssEditor, cssLineNumbers);
+        });
+
+        // サンプルHTML読み込み
+        function loadExample() {
+            const exampleHTML = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>サンプルページ</title>
+</head>
+<body>
+    <h1>🎉 HTMLへようこそ!</h1>
+    
+    <div class="box">
+        <h2>自己紹介</h2>
+        <p>こんにちは!私は<strong>高校生</strong>です。</p>
+        <p>HTMLとCSSを学習中です。</p>
+    </div>
+    
+    <div class="box">
+        <h2>好きなこと</h2>
+        <ul>
+            <li>プログラミング</li>
+            <li>音楽を聴くこと</li>
+            <li>読書</li>
+        </ul>
+    </div>
+    
+    <div class="box">
+        <h2>リンク</h2>
+        <p>
+            <a href="https://www.google.com" target="_blank">
+                Googleで検索
+            </a>
+        </p>
+    </div>
+    
+    <div class="box">
+        <h2>画像の例</h2>
+        <img src="https://via.placeholder.com/400x200/667eea/ffffff?text=HTML+Learning" 
+             alt="サンプル画像">
+    </div>
+</body>
+</html>`;
+
+            const exampleCSS = `body {
+    font-family: sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+}
+
+h1 {
+    color: #667eea;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 10px;
+    text-align: center;
+}
+
+h2 {
+    color: #764ba2;
+    margin-bottom: 10px;
+}
+
+.box {
+    background: white;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    padding: 8px 0;
+    padding-left: 25px;
+    position: relative;
+}
+
+li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #48bb78;
+    font-weight: bold;
+}
+
+a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+img {
+    max-width: 100%;
+    border-radius: 8px;
+    display: block;
+}`;
+
+            htmlEditor.value = exampleHTML;
+            cssEditor.value = exampleCSS;
+            updateLineNumbers(htmlEditor, htmlLineNumbers);
+            updateLineNumbers(cssEditor, cssLineNumbers);
+            setTimeout(() => {
+                updatePreview();
+            }, 10);
+        }
+
+        // エディタクリア
+        function clearEditor() {
+            if (confirm('内容をクリアしてもよろしいですか?\n※保存されたデータも削除されます。')) {
+                htmlEditor.value = '';
+                cssEditor.value = '';
+                updateLineNumbers(htmlEditor, htmlLineNumbers);
+                updateLineNumbers(cssEditor, cssLineNumbers);
+                updatePreview();
+                clearLocalStorage();
+            }
+        }
+
+        // エクスポートメニュー表示
+        function showExportMenu() {
+            document.getElementById('export-overlay').classList.add('show');
+            document.getElementById('export-menu').classList.add('show');
+        }
+
+        // エクスポートメニュー非表示
+        function hideExportMenu() {
+            document.getElementById('export-overlay').classList.remove('show');
+            document.getElementById('export-menu').classList.remove('show');
+        }
+
+        // 個別ファイルでエクスポート
+        function exportSeparateFiles() {
+            const htmlContent = htmlEditor.value;
+            const cssContent = cssEditor.value;
+            
+            if (!htmlContent.trim() && !cssContent.trim()) {
+                alert('エクスポートするコンテンツがありません。');
+                hideExportMenu();
+                return;
+            }
+            
+            if (htmlContent.trim()) {
+                downloadFile('index.html', htmlContent, 'text/html');
+            }
+            if (cssContent.trim()) {
+                downloadFile('style.css', cssContent, 'text/css');
+            }
+            
+            hideExportMenu();
+            alert('ファイルのダウンロードを開始しました!');
+        }
+
+        // 統合ファイルでエクスポート
+        function exportSingleFile() {
+            const htmlContent = htmlEditor.value;
+            const cssContent = cssEditor.value;
+            
+            if (!htmlContent.trim() && !cssContent.trim()) {
+                alert('エクスポートするコンテンツがありません。');
+                hideExportMenu();
+                return;
+            }
+            
+            let combinedHTML = htmlContent;
+            
+            // CSSを<style>タグで追加
+            if (cssContent.trim()) {
+                const styleTag = `\n<style>\n${cssContent}\n</style>`;
+                if (combinedHTML.includes('</head>')) {
+                    combinedHTML = combinedHTML.replace('</head>', styleTag + '\n</head>');
+                } else if (combinedHTML.includes('<body>')) {
+                    combinedHTML = combinedHTML.replace('<body>', styleTag + '\n<body>');
+                } else {
+                    combinedHTML = `<!DOCTYPE html>\n<html lang="ja">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>My Page</title>${styleTag}\n</head>\n<body>\n${combinedHTML}\n</body>\n</html>`;
+                }
+            }
+            
+            downloadFile('index.html', combinedHTML, 'text/html');
+            hideExportMenu();
+            alert('統合HTMLファイルのダウンロードを開始しました!');
+        }
+
+        // ファイルダウンロード実行
+        function downloadFile(filename, content, mimeType) {
+            const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // 初期表示時の処理
+        window.addEventListener('load', () => {
+            // ローカルストレージから復元を試みる
+            const hasRestoredData = loadFromLocalStorage();
+            
+            // 復元データがない場合はウェルカムメッセージを表示
+            if (!hasRestoredData) {
+                const welcomeHTML = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        .welcome {
+            animation: fadeIn 1s;
+        }
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 20px;
+        }
+        .auto-save {
+            font-size: 14px;
+            margin-top: 20px;
+            opacity: 0.9;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome">
+        <h1>👋 ようこそ!</h1>
+        <p>HTMLタブとCSSタブでコードを入力してみましょう</p>
+        <p style="font-size: 16px; margin-top: 30px;">
+            「サンプル読込」ボタンで例を見ることができます
+        </p>
+        <p class="auto-save">💾 入力内容は自動的に保存されます</p>
+    </div>
+</body>
+</html>`;
+                const previewDocument = preview.contentDocument || preview.contentWindow.document;
+                previewDocument.open();
+                previewDocument.write(welcomeHTML);
+                previewDocument.close();
+                
+                // 初期行番号設定
+                updateLineNumbers(htmlEditor, htmlLineNumbers);
+                updateLineNumbers(cssEditor, cssLineNumbers);
+            }
+        });
+    </script>
+</body>
+</html>
